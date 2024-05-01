@@ -1,0 +1,193 @@
+-------------Seccion inicio conocimiento basico------
+-----para empezar a usar los scripts-----------------
+----------------set serveroutput on---------------------------
+RAISE_APPLICATION_ERROR(-20001, 'La columna1 no puede ser nula');
+esto es para informar cobre errores 
+-------------DBMS_OUTPUT.PUT_LINE---------------
+esto es para mostrar por consola
+
+------------Declaraciones de varaibles----------------
+NAME TIPO(TAMAÑO)  (:=0 || '';)-> OPCIONAL
+detalles clob; #es un tipo de varchar con mucho almacenamiento
+
+ 
+---------------------Sentencia If---------------------
+IF (CONDICION) THEN 
+--acciones
+ELSE 
+ELSIF
+END IF
+
+-------------------------BUCLES-----------------------
+--Primer bucle un LOOP
+
+DECLARE
+
+BEGIN
+	LOOP
+	----condicones
+	END LOOP;
+END;
+-----------------------WHILE----------------------------
+ DECLARE
+
+BEGIN
+	WHILE condicion LOOP
+		-- funcionalidad
+	END LOOP;
+
+END;
+
+------------------FOR---------------------------------
+ DECLARE
+
+BEGIN
+	FOR I IN condicion LOOP
+		-- funcionalidad
+	END LOOP;
+
+END;
+-------------------PROCEDIMIENTOS---------------------
+set serveroutput on
+CREATE OR REPLACE PROCEDURE saludo
+AS
+     BEGIN
+        DBMS_OUTPUT.PUT_LINE('HOLA');
+END saludo;	
+---Dos forma de jecutar el procedimiento 
+begin 
+    saludo;
+end;
+execute saludo;
+-----------------------EJEMPLO------------------------
+CREATE OR REPLACE PROCEDURE aumentar_precio
+AS
+     BEGIN
+        UPDATE libros set precio=precio+(precio*0.1);
+END aumentar_precio;
+
+select * from libros ;
+
+execute aumentar_precio;
+
+select * from libros ;
+---------------PARAMETROS DE ENTRADA------------------
+ --procedimiento que aumenta sueldo a empleados
+ create or replace procedure aumentasueldo(anio in number, porcentaje in number)
+as
+ begin
+ update empleados set sueldo=sueldo+(sueldo*porcentaje/100)
+ where (extract(year from current_date)-extract(year from fechaingreso))>anio;
+ end aumentasueldo;
+-----------------esto va aparte--------------------
+CREATE OR REPLACE PROCEDURE filtrado(input_seccion VARCHAR2)
+AS
+  v_empleado EMPLEADOS%ROWTYPE;
+  CURSOR c_empleados IS
+    SELECT *
+    FROM EMPLEADOS
+    WHERE seccion = input_seccion;
+BEGIN
+  OPEN c_empleados;
+  LOOP
+    FETCH c_empleados INTO v_empleado;
+    EXIT WHEN c_empleados%NOTFOUND;
+    DBMS_OUTPUT.PUT_LINE('ID: ' || v_empleado.documento || ', Nombre: ' || v_empleado.nombre || ', Sección: ' || v_empleado.seccion);
+  END LOOP;
+  CLOSE c_empleados;
+END filtrado;
+
+----------------------FUNCIONES------------------------
+CREATE OR REPLACE FUNCTION f_prueba(valor number)
+return number
+is 
+   begin 
+      return valor*2;
+end;
+select f_prueba(2) as total from dual;
+--------------------------EJEMPLO---------------------
+create or replace function f_costo(valor number)
+return varchar
+is
+costo varchar (20);
+	begin
+		costo:='';
+		if valor<=500 then
+		costo: =' economico' ;
+		Else costo: ='costoso' ;
+		end if;
+	return costo;
+end;
+
+select titulo, autor, precio, f_costo(precio) from libros;
+---------------------------EJEMPLO---------------------------
+--retornar el promedio de todos los empleados
+CREATE OR REPLACE FUNCTION f_avg_sueldo
+RETURN NUMBER
+IS
+    total NUMBER;
+BEGIN
+    SELECT AVG(sueldo) INTO total FROM empleados;
+    RETURN total;
+END;
+
+select f_avg_sueldo() from dual
+-----------------------TRIGGERS-------------------------------
+--INFORMATION
+Funcionalidad de un trigger
+--Conservar la integridad referencial y la
+	coherencia entre los datos entre distintas tablas.
+
+--Registrar los cambios que se efectúan sobre las
+	tablas y la identidad de quien los realizó.
+
+--Realizar cualquier acción cuando una tabla es modificada.
+
+• Insertar, actualizar o eliminar datos de una tabla asociada en forma automática.
+Reglas de los triggers
+•No pueden ser invocados directamente;
+•Al intentar modificar los datos de una
+tabla asociada, el trigger se ejecuta
+automáticamente.
+•No reciben ni retornan parámetros.
+•No generan resultados de consultas SQL.
+-------------------------SINTAX-----------------------------
+--ESTO ES SOLO CON INSERT
+SET SERVEROUTPUT ON
+CREATE OR REPLACE TRIGGER inseret_libro
+BEFORE 
+INSERT ON libros 
+    BEGIN 
+        INSERT INTO CONTROL VALUES(user,SYSDATE);
+    END insert_libro;
+    
+insert into libros values(1,'Mil años de soledad','gabriel garcial marques','no se',22);
+select * from libros;
+select* from control;
+---------------ACCEDIENDO A DATOS OLD Y NEW-------------------
+CREATE OR REPLACE TRIGGER UPDATE_LIBRO
+BEFORE UPDATE
+ON LIBROS
+FOR EACH ROW
+    BEGIN
+        INSERT INTO CONTROL VALUES(USER,:OLD.TITULO,:NEW.TITULO,SYSDATE);
+END UPDATE_LIBRO;
+---------------------TRIGGERS EACH ROW------------------------
+--si tratamos de insertar mas de un dato a la vez el for each row
+lo que va a hacer es detectar cada fila de esas y ejecutar
+el trigger por cada inserccion 
+CREATE OR REPLACE TRIGGER ingreso_empleados
+BEFORE INSERT
+ON EMPLEADOS
+FOR EACH ROW
+    BEGIN
+        INSERT INTO CONTROL VALUES(USER,SYSDATE);
+END ingreso_empleados;
+-----------------------TRIGGERS DELETE-----------------------
+CREATE OR REPLACE TRIGGER delete_empleados
+BEFORE DELETE
+ON EMPLEADOS
+FOR EACH ROW
+    BEGIN
+        INSERT INTO CONTROL VALUES(USER,SYSDATE);
+END delete_empleados
